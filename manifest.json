@@ -1,7 +1,7 @@
 {
   "name": "Mu",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "Open separate instances of Discord with different users.",
-  "author": "halcyxn",
+  "author": "halcyxn (modified by Harley#1051)",
   "license": "LGPLv3"
 }

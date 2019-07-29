@@ -11,7 +11,7 @@ module.exports = class Mu extends Plugin {
     super(props);
 
     this.state = {
-      avatarQuery: ''
+      containerQuery: ''
     }
   }
 
@@ -27,7 +27,7 @@ module.exports = class Mu extends Plugin {
 
   pluginWillUnload () {
     uninject('pc-mu-avatar');
-    forceUpdateElement(this.state.avatarQuery);
+    forceUpdateElement(this.state.containerQuery);
   }
 
   handleSave () {
@@ -35,46 +35,42 @@ module.exports = class Mu extends Plugin {
   }
 
   async injectContextMenu () {
-    const currentUserId = (await getModule([ 'getId' ])).getId();
+    const containerClasses = (await getModule([ 'container', 'usernameContainer' ]));
+    const containerQuery = `.${containerClasses.container.replace(/ /g, '.')}`;
 
-    const avatarClasses = (await getModule([ 'container', 'usernameContainer' ]));
-    const avatarQuery = `.${avatarClasses.avatar.replace(/ /g, '.')}`;
-
-    const instance = getOwnerInstance(await waitFor(avatarQuery));
+    const instance = getOwnerInstance(await waitFor(containerQuery));
     inject('pc-mu-avatar', instance.__proto__, 'render', (_, res) => {
-      if (res.props && res.props.children && res.props.children.props) {
-        const avatar = res.props.children.props;
-        const avatarUserId = avatar.src ? (new URL(avatar.src).pathname).split('/')[2] : null;
+      const avatarChildren = (res || res[1]).props.children[0].props.children.props.children();
+      const avatar = avatarChildren.props.children.props.children.props;
 
-        if (avatarUserId === currentUserId && avatar.size === 'SIZE_32') {
-          res.props.onContextMenu = (e) => {
-            const { pageX, pageY } = e;
-            const users = this.settings.get('users', []);
+      if (avatar.size === 'SIZE_32') {
+        avatarChildren.props.children.props.onContextMenu = (e) => {
+          const { pageX, pageY } = e;
+          const users = this.settings.get('users', []);
 
-            contextMenu.openContextMenu(e, () =>
-              React.createElement(ContextMenu, {
-                pageX,
-                pageY,
-                itemGroups: [
-                  users.map(u => ({
-                    type: 'button',
-                    name: `Open ${u.nickname || 'Untitled'}`,
-                    onClick: () => this.createNewInstance(u.token)
-                  }))
-                ]
-              })
-            );
-          };
-        }
+          contextMenu.openContextMenu(e, () =>
+            React.createElement(ContextMenu, {
+              pageX,
+              pageY,
+              itemGroups: [
+                users.map(u => ({
+                  type: 'button',
+                  name: `Open ${u.nickname || 'Untitled'}`,
+                  onClick: () => this.createNewInstance(u.token)
+                }))
+              ]
+            })
+          );
+        };
       }
 
       return res;
     });
 
-    this.state.avatarQuery = avatarQuery;
+    this.state.containerQuery = containerQuery;
 
-    if (this.state.avatarQuery) {
-      forceUpdateElement(this.state.avatarQuery);
+    if (this.state.containerQuery) {
+      forceUpdateElement(this.state.containerQuery);
     }
   }
 
